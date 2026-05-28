@@ -11,6 +11,7 @@ import {
 } from "@almond/axol-vr-client"
 import { WindowManager } from "@almond/axol-ui"
 import { dashboardWindows } from "@almond/axol-ui-panels"
+import { motionScaleWindow, SphereCalibrator, useMotionScale } from "@almond/axol-ui-motion-scale"
 
 const store = createXRStore({
   handTracking: false,
@@ -366,11 +367,14 @@ function CountdownDisplay({ recordingPendingAt }: { recordingPendingAt: number |
   )
 }
 
+const allWindows = [...dashboardWindows, motionScaleWindow]
+
 export default function App() {
   const [hostname, setHostname] = useState(() => localStorage.getItem("wsHostname") ?? "")
   const [vrState, setVrState] = useState<AxolState>(AxolState.Teleop)
   const [recordingPendingAt, setRecordingPendingAt] = useState<number | null>(null)
   const { status, connect, disconnect, wsRef } = useAxolVRClient(hostname)
+  const { motionScale } = useMotionScale()
 
   const handleConnect = () => {
     localStorage.setItem("wsHostname", hostname)
@@ -504,8 +508,10 @@ export default function App() {
             onStateChange={setVrState}
             onPendingRecording={setRecordingPendingAt}
             onExit={() => store.getState().session?.end()}
+            motionScale={motionScale}
           />
-          <WindowManager windows={dashboardWindows} />
+          <WindowManager windows={allWindows} />
+          <SphereCalibrator />
           <XRHud>
             <ExitButton />
             <HelpIcon />

@@ -26,12 +26,46 @@ interface BodyProps {
 // Last-known live diameter from the calibrator. We stash it on a module
 // singleton so the panel's "Confirm" button knows what to commit. The
 // SphereCalibrator writes it every frame; nothing else reads it.
-const liveDiameterRef = { current: 0 }
-export function __setLiveDiameter(d: number) {
-  liveDiameterRef.current = d
+//
+// tango-1: stale-frame guard. If both controllers drop tracking right
+// before Confirm, the SphereCalibrator's useFrame early-returns and this
+// ref retains the last good value. We track `lastUpdatedFrame` against a
+// shared `currentFrame` (bumped EVERY frame regardless of pose validity)
+// and treat a diameter as stale once the gap exceeds the threshold.
+// `__getLiveDiameter` returns null in that case; the Confirm button is a
+// no-op on null.
+//
+// STALE_FRAMES_THRESHOLD = 12 frames ≈ 167ms at 72Hz / 133ms at 90Hz —
+// fast enough to feel responsive, slow enough to tolerate one or two
+// missed-frame blips during normal tracking.
+const STALE_FRAMES_THRESHOLD = 12
+const liveDiameterRef = {
+  diameter: 0,
+  lastUpdatedFrame: 0,
+  currentFrame: 0,
 }
-export function __getLiveDiameter(): number {
-  return liveDiameterRef.current
+export function __setLiveDiameter(d: number, frame: number) {
+  liveDiameterRef.diameter = d
+  liveDiameterRef.lastUpdatedFrame = frame
+}
+export function __bumpFrame(): number {
+  liveDiameterRef.currentFrame += 1
+  return liveDiameterRef.currentFrame
+}
+export function __resetLiveDiameter() {
+  liveDiameterRef.diameter = 0
+  liveDiameterRef.lastUpdatedFrame = 0
+}
+/**
+ * Returns the last published diameter, or null if no fresh reading has
+ * arrived in the last STALE_FRAMES_THRESHOLD frames (e.g. both controllers
+ * lost tracking). Callers should treat null as "no valid reading".
+ */
+export function __getLiveDiameter(): number | null {
+  const gap = liveDiameterRef.currentFrame - liveDiameterRef.lastUpdatedFrame
+  if (liveDiameterRef.lastUpdatedFrame === 0) return null
+  if (gap > STALE_FRAMES_THRESHOLD) return null
+  return liveDiameterRef.diameter
 }
 
 export function MotionScalePanel({ width, height }: BodyProps) {
@@ -92,7 +126,14 @@ export function MotionScalePanel({ width, height }: BodyProps) {
             <ActionButton
               label="Confirm"
               tone="accent"
-              onClick={() => finishCalibration(__getLiveDiameter())}
+              onClick={() => {
+                // tango-1: __getLiveDiameter() returns null if tracking
+                // dropped >12 frames ago; in that case Confirm is a no-op
+                // (the operator should retry by reaching again).
+                const d = __getLiveDiameter()
+                if (d == null) return
+                finishCalibration(d)
+              }}
             />
           </>
         ) : (

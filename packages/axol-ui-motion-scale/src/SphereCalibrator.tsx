@@ -20,7 +20,7 @@ import { useFrame, useThree } from "@react-three/fiber"
 import { Root, Container, Text } from "@react-three/uikit"
 import { ROBOT_ARM_REACH, clampScale, theme } from "./theme"
 import { useMotionScale } from "./useMotionScale"
-import { __setLiveDiameter } from "./MotionScalePanel"
+import { __setLiveDiameter, __bumpFrame, __resetLiveDiameter } from "./MotionScalePanel"
 
 const SAMPLE_MIN_DIAMETER = 0.05 // 5 cm — noise floor / no-touch sanity check
 const SPHERE_COLOR = "#FFD700" // gold/yellow
@@ -48,11 +48,12 @@ export function SphereCalibrator() {
   })
   const lastReadoutAt = useRef(0)
 
-  // Reset published diameter when leaving calibration so a stale value
-  // can't be "confirmed" later.
+  // Reset published diameter when leaving calibration AND when entering a
+  // fresh calibration session — tango-1: so a stale value from a previous
+  // session can't leak into the new one's Confirm.
   useEffect(() => {
+    __resetLiveDiameter()
     if (!isCalibrating) {
-      __setLiveDiameter(0)
       setReadout({ diameter: 0, scale: 1.0 })
     }
   }, [isCalibrating])
@@ -69,6 +70,13 @@ export function SphereCalibrator() {
 
   useFrame(() => {
     if (!isCalibrating) return
+
+    // tango-1: bump the shared frame counter EVERY frame regardless of
+    // tracking validity. The Confirm-button getter (__getLiveDiameter)
+    // diffs `currentFrame` against `lastUpdatedFrame` to detect stale
+    // readings; without this tick the gap would never grow when tracking
+    // drops, defeating the guard.
+    const currentFrame = __bumpFrame()
 
     const session = gl.xr.getSession()
     const frame = gl.xr.getFrame()
@@ -100,8 +108,9 @@ export function SphereCalibrator() {
     const diameter = Math.sqrt(dx * dx + dy * dy + dz * dz)
     const radius = diameter / 2
 
-    // Publish so the Confirm button can read it.
-    __setLiveDiameter(diameter)
+    // Publish so the Confirm button can read it. The frame stamp lets the
+    // getter detect stale readings if both controllers drop tracking.
+    __setLiveDiameter(diameter, currentFrame)
 
     // Place the group at the midpoint.
     if (groupRef.current) {

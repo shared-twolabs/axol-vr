@@ -8,8 +8,29 @@ WebXR teleoperation interface for the Almond Axol robot. Streams hand/elbow pose
 axol-vr/
 ├── app/                        # Vite + React app (deployed to Vercel)
 └── packages/
-    └── axol-vr-client/         # Reusable R3F components and hooks
+    ├── axol-vr-client/         # Reusable R3F components and hooks
+    ├── axol-ui/                # WindowManager + FloatingPanel primitives (uikit)
+    ├── axol-ui-panels/         # 8 dashboard panels (Cameras, Preflight, ...)
+    └── axol-ui-motion-scale/   # MotionScalePanel + SphereCalibrator
 ```
+
+## Floating window dashboard (NEW)
+
+The Vite app embeds a floating-window UI inside the WebXR scene:
+
+- `@almond/axol-ui` — `WindowManager`, `FloatingPanel`, `WindowPicker` primitives (uikit-based)
+- `@almond/axol-ui-panels` — 8 panels (Cameras, Preflight, SyncClocks, ZedStream, Teleop, CollectData, Takes, System)
+- `@almond/axol-ui-motion-scale` — `MotionScalePanel` + `SphereCalibrator` for setting the teleop motion multiplier
+
+Controller mapping additions (NON-COLLIDING with the existing recording bindings):
+
+- `L thumbstick click` — toggle the window picker
+- `L thumbstick X axis` — scroll the picker selection
+- `L thumbstick Y axis` — adjust focused window opacity
+- `R thumbstick click` — reset window layout to defaults
+- `R trigger` (when pointed at picker tile) — open/close that window
+
+Set `VITE_DASHBOARD_URL` to the FastAPI dashboard server URL for `/api/*` proxying (defaults to `http://localhost:8080`).
 
 ## Packages
 

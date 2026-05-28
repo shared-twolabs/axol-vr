@@ -41,9 +41,7 @@ export function WindowPicker({ visible, registry }: WindowPickerProps) {
   return (
     <group ref={groupRef} visible={false}>
       {/* Translate the picker to the head-relative offset specified in theme. */}
-      <group
-        position={[theme.pickerOffset[0], theme.pickerOffset[1], theme.pickerOffset[2]]}
-      >
+      <group position={[theme.pickerOffset[0], theme.pickerOffset[1], theme.pickerOffset[2]]}>
         {/* Background plane */}
         <mesh renderOrder={1000}>
           <planeGeometry args={[panelW, panelH]} />
@@ -122,12 +120,12 @@ function PickerTile({ width, height, title, icon, open, focused, onClick }: Pick
       alignItems="center"
       justifyContent="center"
       backgroundColor={bg}
-      backgroundOpacity={0.9}
+      opacity={0.9}
       borderColor={focused ? theme.focusBorder : open ? theme.openIndicator : theme.border}
       borderWidth={focused ? 0.003 : open ? 0.0015 : 0.0008}
       borderRadius={0.005}
       gap={0.004}
-      onClick={(e) => {
+      onClick={(e: { stopPropagation?: () => void }) => {
         e.stopPropagation?.()
         onClick()
       }}

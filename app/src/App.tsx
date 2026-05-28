@@ -9,6 +9,8 @@ import {
   AxolState,
   useAxolVRClient,
 } from "@almond/axol-vr-client"
+import { WindowManager } from "@almond/axol-ui"
+import { dashboardWindows } from "@almond/axol-ui-panels"
 
 const store = createXRStore({
   handTracking: false,
@@ -503,6 +505,7 @@ export default function App() {
             onPendingRecording={setRecordingPendingAt}
             onExit={() => store.getState().session?.end()}
           />
+          <WindowManager windows={dashboardWindows} />
           <XRHud>
             <ExitButton />
             <HelpIcon />

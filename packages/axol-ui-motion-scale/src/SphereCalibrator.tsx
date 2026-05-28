@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
-import { Root, Container, Text } from "@react-three/uikit"
+import { Container, Text } from "@react-three/uikit"
 import { ROBOT_ARM_REACH, clampScale, theme } from "./theme"
 import { useMotionScale } from "./useMotionScale"
 import { __setLiveDiameter, __bumpFrame, __resetLiveDiameter } from "./MotionScalePanel"
@@ -161,9 +161,9 @@ export function SphereCalibrator() {
         />
       </mesh>
 
-      {/* Floating readout label — uikit Root at sphere top */}
+      {/* Floating readout label — uikit Container at sphere top */}
       <group ref={labelGroupRef}>
-        <Root
+        <Container
           sizeX={0.32}
           sizeY={0.08}
           flexDirection="column"
@@ -187,7 +187,7 @@ export function SphereCalibrator() {
               press Confirm in the panel
             </Text>
           </Container>
-        </Root>
+        </Container>
       </group>
     </group>
   )

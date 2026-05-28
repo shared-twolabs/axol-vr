@@ -6,7 +6,7 @@
 import { useRef } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
-import { Root, Container, Text } from "@react-three/uikit"
+import { Container, Text } from "@react-three/uikit"
 import type { WindowRegistry } from "./hooks/useWindowState"
 import { theme } from "./theme"
 
@@ -56,7 +56,7 @@ export function WindowPicker({ visible, registry }: WindowPickerProps) {
 
         {/* Tile row via uikit flex */}
         <group position={[0, 0, 0.001]}>
-          <Root
+          <Container
             sizeX={panelW}
             sizeY={panelH}
             flexDirection="row"
@@ -91,7 +91,7 @@ export function WindowPicker({ visible, registry }: WindowPickerProps) {
               focused={false}
               onClick={() => registry.resetLayout()}
             />
-          </Root>
+          </Container>
         </group>
       </group>
     </group>

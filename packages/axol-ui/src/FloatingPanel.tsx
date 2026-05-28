@@ -8,7 +8,7 @@
 
 import { useCallback, useRef } from "react"
 import * as THREE from "three"
-import { Root, Container, Text } from "@react-three/uikit"
+import { Container, Text } from "@react-three/uikit"
 import { useFrame, type ThreeEvent } from "@react-three/fiber"
 import type { WindowDef, WindowState } from "./types"
 import { theme } from "./theme"
@@ -120,7 +120,7 @@ export function FloatingPanel({
             side={THREE.DoubleSide}
           />
         </mesh>
-        <Root
+        <Container
           sizeX={width}
           sizeY={headerH}
           flexDirection="row"
@@ -149,7 +149,7 @@ export function FloatingPanel({
               </Text>
             </Container>
           </Container>
-        </Root>
+        </Container>
       </group>
 
       {/* Body — background plane + consumer content */}

@@ -6,18 +6,33 @@ import { AxolState } from "./types"
 const L_ELBOW_JOINT = "left-arm-lower" as XRBodyJoint
 const R_ELBOW_JOINT = "right-arm-lower" as XRBodyJoint
 
+export interface AxolVRClientProps {
+  wsRef: RefObject<WebSocket | null>
+  onStateChange?: (state: AxolState) => void
+  onPendingRecording?: (pendingAt: number | null) => void
+  onExit?: () => void
+  /**
+   * Teleop motion multiplier sent to the server in every frame.
+   * Defaults to 1.0 (identity). May be updated at any time; the latest
+   * value is read on each frame via a ref, so callers can change it
+   * (e.g. from a UI slider or controller axis) without re-mounting.
+   */
+  motionScale?: number
+}
+
 export function AxolVRClient({
   wsRef,
   onStateChange,
   onPendingRecording,
   onExit,
-}: {
-  wsRef: RefObject<WebSocket | null>
-  onStateChange?: (state: AxolState) => void
-  onPendingRecording?: (pendingAt: number | null) => void
-  onExit?: () => void
-}) {
+  motionScale = 1.0,
+}: AxolVRClientProps) {
   const { gl } = useThree()
+
+  // Capture the latest motionScale prop in a ref so the per-frame send
+  // always uses the freshest value without re-creating the useFrame loop.
+  const motionScaleRef = useRef(motionScale)
+  motionScaleRef.current = motionScale
 
   const stateRef = useRef<AxolState>(AxolState.Teleop)
   const seqRef = useRef(0)
@@ -197,6 +212,7 @@ export function AxolVRClient({
         r_grip,
         reset,
         state: stateRef.current,
+        motion_scale: motionScaleRef.current,
         seq: ++seqRef.current,
       })
     )

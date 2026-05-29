@@ -66,11 +66,7 @@ export function ForceHUD({
   )
 
   return (
-    <group
-      position={[0, forceTheme.upY, forceTheme.forwardZ]}
-      visible={visible}
-      renderOrder={998}
-    >
+    <group position={[0, forceTheme.upY, forceTheme.forwardZ]} visible={visible} renderOrder={998}>
       <BackgroundPlane />
       <ConnectionIndicator connected={connected} />
 
@@ -164,8 +160,6 @@ function ArmHUD({ side, latestRef, historyRef, threshold, xOffset }: ArmHUDProps
   const valueTextRefs = useRef<(THREE.Object3D | null)[]>(JOINT_NAMES.map(() => null))
   // BRI text ref.
   const briTextRef = useRef<THREE.Object3D | null>(null)
-  // Sparkline ref — we rebuild its geometry positions each frame.
-  const sparkLineRef = useRef<THREE.Line | null>(null)
 
   // Pre-compute per-bar x positions and color materials.
   const layout = useMemo(() => {
@@ -180,18 +174,28 @@ function ArmHUD({ side, latestRef, historyRef, threshold, xOffset }: ArmHUDProps
   }, [])
 
   // Pre-built sparkline geometry — vertices get mutated each frame.
-  const sparkGeometry = useMemo(() => {
+  // We construct a THREE.Line directly and expose via <primitive> to avoid
+  // the intrinsic `<line>` JSX collision with SVG's <line>.
+  const { sparkLine, sparkGeometry } = useMemo(() => {
     const geom = new THREE.BufferGeometry()
     const positions = new Float32Array(SPARKLINE_POINTS * 3)
     geom.setAttribute("position", new THREE.BufferAttribute(positions, 3))
-    return geom
+    const mat = new THREE.LineBasicMaterial({
+      color: forceTheme.colorDim,
+      transparent: true,
+      opacity: 0.35,
+      depthTest: false,
+      linewidth: 2,
+    })
+    const lineObj = new THREE.Line(geom, mat)
+    lineObj.renderOrder = 1000
+    return { sparkLine: lineObj, sparkGeometry: geom }
   }, [])
 
   // Per-frame: read torques, scale bars, update value text, redraw sparkline.
   useFrame(() => {
     const sample = latestRef.current
-    const joints =
-      sample != null ? (side === "left" ? sample.left : sample.right) : zeroJoints()
+    const joints = sample != null ? (side === "left" ? sample.left : sample.right) : zeroJoints()
 
     // ---- Bars ----
     for (let i = 0; i < JOINT_NAMES.length; i++) {
@@ -231,8 +235,7 @@ function ArmHUD({ side, latestRef, historyRef, threshold, xOffset }: ArmHUDProps
     }
 
     // ---- Sparkline (GRIP trace) ----
-    const line = sparkLineRef.current
-    if (line) {
+    {
       const hist = historyRef.current
       // Downsample to SPARKLINE_POINTS.
       const stride = Math.max(1, Math.floor(hist.length / SPARKLINE_POINTS))
@@ -263,8 +266,9 @@ function ArmHUD({ side, latestRef, historyRef, threshold, xOffset }: ArmHUDProps
       ;(sparkGeometry.attributes.position as THREE.BufferAttribute).needsUpdate = true
       // Color the sparkline based on the most recent grip value.
       const tail = points[points.length - 1] ?? 0
-      const tailColor = sample == null ? forceTheme.colorDim : colorForTorque(tail, "GRIP", threshold)
-      const lineMat = line.material as THREE.LineBasicMaterial
+      const tailColor =
+        sample == null ? forceTheme.colorDim : colorForTorque(tail, "GRIP", threshold)
+      const lineMat = sparkLine.material as THREE.LineBasicMaterial
       lineMat.color.set(tailColor)
       lineMat.opacity = sample == null ? 0.35 : 0.95
     }
@@ -365,23 +369,8 @@ function ArmHUD({ side, latestRef, historyRef, threshold, xOffset }: ArmHUDProps
         )
       })}
 
-      {/* Sparkline (GRIP trace) */}
-      <line
-        ref={(l) => {
-          sparkLineRef.current = l as THREE.Line | null
-        }}
-        position={[0, sparkY, 0.001]}
-        renderOrder={1000}
-      >
-        <primitive object={sparkGeometry} attach="geometry" />
-        <lineBasicMaterial
-          color={forceTheme.colorDim}
-          transparent
-          opacity={0.35}
-          depthTest={false}
-          linewidth={2}
-        />
-      </line>
+      {/* Sparkline (GRIP trace) — primitive sidesteps SVG-line JSX collision. */}
+      <primitive object={sparkLine} position={[0, sparkY, 0.001]} />
 
       {/* BRI pill */}
       <Text

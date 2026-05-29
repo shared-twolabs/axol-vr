@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@almond/axol-ui": "*",
+    "@almond/axol-ui-force-hud": "*",
     "@almond/axol-ui-motion-scale": "*",
     "@almond/axol-ui-panels": "*",
     "@almond/axol-vr-client": "*",

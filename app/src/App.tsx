@@ -12,6 +12,7 @@ import {
 import { WindowManager } from "@almond/axol-ui"
 import { dashboardWindows } from "@almond/axol-ui-panels"
 import { motionScaleWindow, SphereCalibrator, useMotionScale } from "@almond/axol-ui-motion-scale"
+import { ForceHUD } from "@almond/axol-ui-force-hud"
 
 const store = createXRStore({
   handTracking: false,
@@ -517,6 +518,7 @@ export default function App() {
             <HelpIcon />
             <StateDisplay state={vrState} isRecordingPending={recordingPendingAt !== null} />
             <CountdownDisplay recordingPendingAt={recordingPendingAt} />
+            <ForceHUD />
           </XRHud>
           <PoseVisualizer />
         </XR>
